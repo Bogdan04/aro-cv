@@ -112,88 +112,120 @@ void trackObject(Mat imgCanny, Mat frame) {
 int main()
 {
 	//load the video stream
-	CvCapture *capture = cvCaptureFromCAM(-1);
+	CvCapture *capture_r = cvCaptureFromCAM(0);
+	CvCapture *capture_l = cvCaptureFromCAM(1);
 	//set video rezolution
-	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, 320);
-	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, 240);
+	cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_WIDTH, 160);
+	//cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_HEIGHT, 240);
+	cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 160);
+	//cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_HEIGHT, 240);
 
-	if (!capture) {
-		printf("Capture failed!\n");
+	if (!capture_r) {
+		printf("Capture right failed!\n");
+		return -1;
+	}
+
+	if (!capture_l) {
+		printf("Capture left failed!\n");
 		return -1;
 	}
 
 
-	Mat frame_circles, frame_polygons, frame_orig;
-	vector<Vec3f> circles;
-
-	//create output window
-	//cvNamedWindow("Output video", CV_WINDOW_AUTOSIZE);
-	//cvNamedWindow("Canny video", CV_WINDOW_AUTOSIZE);
-
-	//iterate through each frame of the video
+	Mat frame_circles, frame_polygons, frame_orig, frame_left, frame_right;
+//	vector<Vec3f> circles;
+//
+//	//create output window
+//	//cvNamedWindow("Output video", CV_WINDOW_AUTOSIZE);
+//	//cvNamedWindow("Canny video", CV_WINDOW_AUTOSIZE);
+//
+	cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
+	cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
+//	//iterate through each frame of the video
 	while (1)
 	{
-		frame_orig = cvQueryFrame(capture);
-		frame_polygons = frame_orig.clone();
-		//IplImage* frame_ipl= new IplImage(frame_orig);
-		//frame_ipl = cvCloneImage(frame_ipl);
+//		frame_orig = cvQueryFrame(capture);
+		frame_left = cvQueryFrame(capture_l);
+		frame_right = cvQueryFrame(capture_r);
 
+//		frame_polygons = frame_orig.clone();
+//		//IplImage* frame_ipl= new IplImage(frame_orig);
+//		//frame_ipl = cvCloneImage(frame_ipl);
+//
+//
+//		/// Convert it to gray
+//		cvtColor( frame_orig, frame_circles, CV_BGR2GRAY );
+//
+//		/// Reduce the noise so we avoid false circle detection
+//		GaussianBlur( frame_circles, frame_circles, Size(9, 9), 2, 2 );
+//
+//		/// Apply the Hough Transform to find the circles
+//		HoughCircles( frame_circles, circles, CV_HOUGH_GRADIENT, 1, frame_circles.rows/8, 150, 25, 0, 0 );
+//
+//		/// Draw the circles detected
+//		int cx, cy;
+//		//	for( size_t i = 0; i < circles.size(); i++ )
+//		//	{
+//		if (circles.size() > 0)
+//		{
+//			int i  = 0;
+//			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+//			int radius = cvRound(circles[i][2]);
+//
+//			cx = center.x / 117 + 1;
+//			cy = center.y / 96 + 1;
+//
+//			// circle center
+//			circle( frame_orig, center, 3, Scalar(0,255,0), -1, 8, 0 );
+//			printf("%d: CX%d-CY%d    %d, %d\n",i, cx, cy,  center.x, center.y);
+//			// circle outline
+//			circle( frame_orig, center, radius, Scalar(0,0,255), 3, 8, 0 );
+//		}
+//
+//
+//		// Convert cv::Mat to IplImage
+//		//IplImage *frame_orig_ipl = new IplImage(frame_orig);
+//
+//		//IplImage* frame_canny_ipl= cvCreateImage(cvGetSize(frame_ipl),8,1);
+//		//cvCanny(frame_ipl,frame_canny_ipl,100,200,3);
+//		Canny(frame_polygons, frame_polygons, 100, 200, 3);
+//		trackObject(frame_polygons, frame_orig);
+//
+//
+//
+//		//cvShowImage( "Output video", frame_orig_ipl ); //original image + circle & polygons contours
+//		imshow("Output video", frame_orig);
+//		//imshow("Canny video", frame_polygons);
+//		//cvShowImage( "Canny video", (const CvArr*)frame_orig ); //canny input for polygons detection
+//
+//		//clear memory
+//		//cvReleaseImage(&frame_orig_ipl);
+//		//cvReleaseImage(&frame_canny_ipl);
+//		//cvReleaseImage(&frame_ipl);
+//
+//		//Save image to disk (preview from beaglebone)
+//		//cvSaveImage("scary.jpg", frame_orig_ipl);
 
-		/// Convert it to gray
-		cvtColor( frame_orig, frame_circles, CV_BGR2GRAY );
-
-		/// Reduce the noise so we avoid false circle detection
-		GaussianBlur( frame_circles, frame_circles, Size(9, 9), 2, 2 );
-
-		/// Apply the Hough Transform to find the circles
-		HoughCircles( frame_circles, circles, CV_HOUGH_GRADIENT, 1, frame_circles.rows/8, 150, 25, 0, 0 );
-
-		/// Draw the circles detected
-		int cx, cy;
-		//	for( size_t i = 0; i < circles.size(); i++ )
-		//	{
-		if (circles.size() > 0)
-		{
-			int i  = 0;
-			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-			int radius = cvRound(circles[i][2]);
-
-			cx = center.x / 117 + 1;
-			cy = center.y / 96 + 1;
-
-			// circle center
-			circle( frame_orig, center, 3, Scalar(0,255,0), -1, 8, 0 );
-			printf("%d: CX%d-CY%d    %d, %d\n",i, cx, cy,  center.x, center.y);
-			// circle outline
-			circle( frame_orig, center, radius, Scalar(0,0,255), 3, 8, 0 );
-		}
-
-
-		// Convert cv::Mat to IplImage
-		//IplImage *frame_orig_ipl = new IplImage(frame_orig);
-
-		//IplImage* frame_canny_ipl= cvCreateImage(cvGetSize(frame_ipl),8,1);
-		//cvCanny(frame_ipl,frame_canny_ipl,100,200,3);
-		Canny(frame_polygons, frame_polygons, 100, 200, 3);
-		trackObject(frame_polygons, frame_orig);
-
-
-
-		//cvShowImage( "Output video", frame_orig_ipl ); //original image + circle & polygons contours
-		imshow("Output video", frame_orig);
-		//imshow("Canny video", frame_polygons);
-		//cvShowImage( "Canny video", (const CvArr*)frame_orig ); //canny input for polygons detection
-
-		//clear memory
-		//cvReleaseImage(&frame_orig_ipl);
-		//cvReleaseImage(&frame_canny_ipl);
-		//cvReleaseImage(&frame_ipl);
-
-		//Save image to disk (preview from beaglebone)
-		//cvSaveImage("scary.jpg", frame_orig_ipl);
+		imshow("left", frame_left);
+		imshow("right", frame_right);
 
 
 		int c = cvWaitKey(10);
+		int aux=0;
+		if ((char) c == 65){
+			char l[15],r[15];
+
+			sprintf(l, "left%02d.ppm", aux);
+			sprintf(r, "right%02d.ppm", aux);
+
+			//cvSaveImage(l, &frame_left);
+			imwrite(l, frame_left);
+			imwrite(r, frame_right);
+
+			//imsa
+			//cvSaveImage(r, frame_right);
+
+			aux++;
+		}
 		//If 'ESC' is pressed, break the loop
 		if ((char) c == 27)
 			break;
