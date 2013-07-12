@@ -112,13 +112,21 @@ void trackObject(Mat imgCanny, Mat frame) {
 int main()
 {
 	//load the video stream
-	CvCapture *capture_r = cvCaptureFromCAM(0);
-	CvCapture *capture_l = cvCaptureFromCAM(1);
+	CvCapture *capture_r = cvCaptureFromCAM(1);
+	CvCapture *capture_l = cvCaptureFromCAM(0);
 	//set video rezolution
-	cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_WIDTH, 160);
+	cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_WIDTH, 320);
 	//cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_HEIGHT, 240);
-	cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 160);
+	cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 320);
 	//cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_HEIGHT, 240);
+
+	Mat *Q = (Mat *)cvLoad("Q.xml",NULL,NULL,NULL);
+//	Mat *mx1 = (Mat *)cvLoad("mx1.xml",NULL,NULL,NULL);
+//	Mat *my1 = (Mat *)cvLoad("my1.xml",NULL,NULL,NULL);
+//	Mat *mx2 = (Mat *)cvLoad("mx2.xml",NULL,NULL,NULL);
+//	Mat *my2 = (Mat *)cvLoad("my2.xml",NULL,NULL,NULL);
+
+	int aux=0;
 
 	if (!capture_r) {
 		printf("Capture right failed!\n");
@@ -131,8 +139,9 @@ int main()
 	}
 
 
-	Mat frame_circles, frame_polygons, frame_orig, frame_left, frame_right;
-//	vector<Vec3f> circles;
+	Mat frame_circles_r, frame_circles_l, frame_polygons_r, frame_polygons_l, frame_orig_r,frame_orig_l, frame_left, frame_right;
+	Mat frame_undistorted_r, frame_undistorted_l;
+	vector<Vec3f> circles_r, circles_l;
 //
 //	//create output window
 //	//cvNamedWindow("Output video", CV_WINDOW_AUTOSIZE);
@@ -144,73 +153,118 @@ int main()
 	while (1)
 	{
 //		frame_orig = cvQueryFrame(capture);
-		frame_left = cvQueryFrame(capture_l);
-		frame_right = cvQueryFrame(capture_r);
+		frame_orig_l = cvQueryFrame(capture_l);
+		frame_orig_r = cvQueryFrame(capture_r);
 
-//		frame_polygons = frame_orig.clone();
-//		//IplImage* frame_ipl= new IplImage(frame_orig);
-//		//frame_ipl = cvCloneImage(frame_ipl);
-//
-//
-//		/// Convert it to gray
-//		cvtColor( frame_orig, frame_circles, CV_BGR2GRAY );
-//
-//		/// Reduce the noise so we avoid false circle detection
-//		GaussianBlur( frame_circles, frame_circles, Size(9, 9), 2, 2 );
-//
-//		/// Apply the Hough Transform to find the circles
-//		HoughCircles( frame_circles, circles, CV_HOUGH_GRADIENT, 1, frame_circles.rows/8, 150, 25, 0, 0 );
-//
-//		/// Draw the circles detected
-//		int cx, cy;
-//		//	for( size_t i = 0; i < circles.size(); i++ )
-//		//	{
-//		if (circles.size() > 0)
-//		{
-//			int i  = 0;
-//			Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-//			int radius = cvRound(circles[i][2]);
-//
-//			cx = center.x / 117 + 1;
-//			cy = center.y / 96 + 1;
-//
-//			// circle center
-//			circle( frame_orig, center, 3, Scalar(0,255,0), -1, 8, 0 );
-//			printf("%d: CX%d-CY%d    %d, %d\n",i, cx, cy,  center.x, center.y);
-//			// circle outline
-//			circle( frame_orig, center, radius, Scalar(0,0,255), 3, 8, 0 );
-//		}
-//
-//
-//		// Convert cv::Mat to IplImage
-//		//IplImage *frame_orig_ipl = new IplImage(frame_orig);
-//
-//		//IplImage* frame_canny_ipl= cvCreateImage(cvGetSize(frame_ipl),8,1);
-//		//cvCanny(frame_ipl,frame_canny_ipl,100,200,3);
+		frame_polygons_r = frame_orig_r.clone();
+		frame_polygons_l = frame_orig_l.clone();
+
+		//IplImage *frame_undistorted_ipl_l;
+		//IplImage *frame_orig_ipl_l = new IplImage(frame_orig_l);
+
+		//remap(frame_orig_r, frame_undistorted_r, mx1, my1, CV_INTER_LINEAR, BORDER_CONSTANT, Scalar(0,0, 0) );
+		//cvRemap(&frame_orig_r, &frame_undistorted_r, mx2, my2);
+
+
+		/// Convert it to gray
+		cvtColor( frame_orig_r, frame_circles_r, CV_BGR2GRAY );
+		cvtColor( frame_orig_l, frame_circles_l, CV_BGR2GRAY );
+
+		/// Reduce the noise so we avoid false circle detection
+		GaussianBlur( frame_circles_r, frame_circles_r, Size(9, 9), 2, 2 );
+		GaussianBlur( frame_circles_l, frame_circles_l, Size(9, 9), 2, 2 );
+
+		/// Apply the Hough Transform to find the circles
+		HoughCircles( frame_circles_r, circles_r, CV_HOUGH_GRADIENT, 1, frame_circles_r.rows/8, 150, 25, 0, 0 );
+		HoughCircles( frame_circles_l, circles_l, CV_HOUGH_GRADIENT, 1, frame_circles_l.rows/8, 150, 25, 0, 0 );
+
+		/// Draw the circles detected
+		int cx, cy, center_x_r, center_y_r, center_x_l, center_y_l;
+		//	for( size_t i = 0; i < circles.size(); i++ )
+		//	{
+		if (circles_r.size() > 0)
+		{
+			int i  = 0;
+			Point center(cvRound(circles_r[i][0]), cvRound(circles_r[i][1]));
+			int radius = cvRound(circles_r[i][2]);
+
+			cx = center.x / 117 + 1;
+			cy = center.y / 96 + 1;
+
+			center_x_r = center.x;
+			center_y_r = center.y;
+
+			// circle center
+			circle( frame_orig_r, center, 3, Scalar(0,255,0), -1, 8, 0 );
+			//printf("%d: CX%d-CY%d    %d, %d\n",i, cx, cy,  center.x, center.y);
+			// circle outline
+			circle( frame_orig_r, center, radius, Scalar(0,0,255), 3, 8, 0 );
+		}
+
+		if (circles_l.size() > 0)
+		{
+			int i  = 0;
+			Point center(cvRound(circles_l[i][0]), cvRound(circles_l[i][1]));
+			int radius = cvRound(circles_l[i][2]);
+
+			cx = center.x / 117 + 1;
+			cy = center.y / 96 + 1;
+
+			center_x_l = center.x;
+			center_y_l = center.y;
+
+			// circle center
+			circle( frame_orig_l, center, 3, Scalar(0,255,0), -1, 8, 0 );
+			//printf("%d: CX%d-CY%d    %d, %d\n",i, cx, cy,  center.x, center.y);
+			// circle outline
+			circle( frame_orig_l, center, radius, Scalar(0,0,255), 3, 8, 0 );
+		}
+
+		int d = center_x_r - center_x_l;
+
+	//	CvMat X = center_x_l * Q[0, 0] + Q[0, 3];
+
+
+//		float Y = center_y_l * Q[1, 1] + Q[1, 3];
+//		float Z = Q[2, 3];
+//		float W = d * Q[3, 2] + Q[3, 3];
+
+//		X = X / W;
+//		Y = Y / W;
+//		Z = Z / W;
+
+		//printf("X: %d  Y: %d   Z: %d\n", X, Y, Z);
+
+
+		// Convert cv::Mat to IplImage
+		//IplImage *frame_orig_ipl = new IplImage(frame_orig);
+
+		//IplImage* frame_canny_ipl= cvCreateImage(cvGetSize(frame_ipl),8,1);
+		//cvCanny(frame_ipl,frame_canny_ipl,100,200,3);
 //		Canny(frame_polygons, frame_polygons, 100, 200, 3);
 //		trackObject(frame_polygons, frame_orig);
-//
-//
-//
-//		//cvShowImage( "Output video", frame_orig_ipl ); //original image + circle & polygons contours
-//		imshow("Output video", frame_orig);
-//		//imshow("Canny video", frame_polygons);
-//		//cvShowImage( "Canny video", (const CvArr*)frame_orig ); //canny input for polygons detection
-//
-//		//clear memory
-//		//cvReleaseImage(&frame_orig_ipl);
-//		//cvReleaseImage(&frame_canny_ipl);
-//		//cvReleaseImage(&frame_ipl);
-//
-//		//Save image to disk (preview from beaglebone)
-//		//cvSaveImage("scary.jpg", frame_orig_ipl);
 
-		imshow("left", frame_left);
-		imshow("right", frame_right);
+
+
+		//cvShowImage( "Output video", frame_orig_ipl ); //original image + circle & polygons contours
+		//imshow("Output video", frame_orig);
+		//imshow("Canny video", frame_polygons);
+		//cvShowImage( "Canny video", (const CvArr*)frame_orig ); //canny input for polygons detection
+
+		//clear memory
+		//cvReleaseImage(&frame_orig_ipl);
+		//cvReleaseImage(&frame_canny_ipl);
+		//cvReleaseImage(&frame_ipl);
+
+		//Save image to disk (preview from beaglebone)
+		//cvSaveImage("scary.jpg", frame_orig_ipl);
+
+		imshow("left", frame_orig_l);
+		imshow("right", frame_orig_r);
 
 
 		int c = cvWaitKey(10);
-		int aux=0;
+
 		if ((char) c == 65){
 			char l[15],r[15];
 
@@ -235,3 +289,46 @@ int main()
 	cvDestroyAllWindows();
 	return 0;
 }
+
+
+//#include <opencv2/opencv.hpp>
+//
+//int main()
+//{
+//    //initialize and allocate memory to load the video stream from camera
+//    CvCapture *capture1 = cvCaptureFromCAM(0);
+//    CvCapture *capture2 = cvCaptureFromCAM(1);
+//
+//	cvSetCaptureProperty(capture1, CV_CAP_PROP_FRAME_WIDTH, 320);
+//	//cvSetCaptureProperty(capture1, CV_CAP_PROP_FRAME_HEIGHT, 240);
+//	cvSetCaptureProperty(capture2, CV_CAP_PROP_FRAME_WIDTH, 320);
+//	//cvSetCaptureProperty(capture2, CV_CAP_PROP_FRAME_HEIGHT, 240);
+//
+//
+//    if( !capture1 ) return 1;
+//    if (!capture2) return 1 ;
+//    cvNamedWindow("Video1");
+//    cvNamedWindow("Video2") ;
+//
+//    while(true) {
+//        //grab and retrieve each frames of the video sequentially
+//        IplImage* frame1 = cvQueryFrame( capture1 );
+//        IplImage* frame2 = cvQueryFrame( capture2 );
+//
+//        if( frame1 )
+//        {
+//			cvShowImage( "Video1", frame1 );
+//        }
+//        if (frame2)
+//			cvShowImage( "Video2", frame2 );
+//
+//
+//        //wait for 40 milliseconds
+//        int c = cvWaitKey(40);
+//
+//        //exit the loop if user press "Esc" key  (ASCII value of "Esc" is 27)
+//        if((char)c==27 ) break;
+//    }
+//
+//    return 0;
+//}
