@@ -120,11 +120,12 @@ int main()
 	cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 320);
 	//cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_HEIGHT, 240);
 
-	Mat *Q = (Mat *)cvLoad("Q.xml",NULL,NULL,NULL);
-//	Mat *mx1 = (Mat *)cvLoad("mx1.xml",NULL,NULL,NULL);
-//	Mat *my1 = (Mat *)cvLoad("my1.xml",NULL,NULL,NULL);
-//	Mat *mx2 = (Mat *)cvLoad("mx2.xml",NULL,NULL,NULL);
-//	Mat *my2 = (Mat *)cvLoad("my2.xml",NULL,NULL,NULL);
+	//Mat *Q = (Mat *)cvLoad("Q.xml");
+	double qu[4][4] ={{1.0, 0.0, 0.0, -1.0384888534545898e+03},
+		    {0.0, 1.0, 0.0, -8.9958347320556641e+01},
+		    {0.0, 0.0, 0.0, 9.8627901063924435e+02},
+		    {0.0, 0.0, 1.5284315798247780e-01, 2.9219960278349775e+00}};
+
 
 	int aux=0;
 
@@ -147,8 +148,8 @@ int main()
 //	//cvNamedWindow("Output video", CV_WINDOW_AUTOSIZE);
 //	//cvNamedWindow("Canny video", CV_WINDOW_AUTOSIZE);
 //
-	cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
-	cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
 //	//iterate through each frame of the video
 	while (1)
 	{
@@ -159,11 +160,7 @@ int main()
 		frame_polygons_r = frame_orig_r.clone();
 		frame_polygons_l = frame_orig_l.clone();
 
-		//IplImage *frame_undistorted_ipl_l;
-		//IplImage *frame_orig_ipl_l = new IplImage(frame_orig_l);
 
-		//remap(frame_orig_r, frame_undistorted_r, mx1, my1, CV_INTER_LINEAR, BORDER_CONSTANT, Scalar(0,0, 0) );
-		//cvRemap(&frame_orig_r, &frame_undistorted_r, mx2, my2);
 
 
 		/// Convert it to gray
@@ -175,8 +172,8 @@ int main()
 		GaussianBlur( frame_circles_l, frame_circles_l, Size(9, 9), 2, 2 );
 
 		/// Apply the Hough Transform to find the circles
-		HoughCircles( frame_circles_r, circles_r, CV_HOUGH_GRADIENT, 1, frame_circles_r.rows/8, 150, 25, 0, 0 );
-		HoughCircles( frame_circles_l, circles_l, CV_HOUGH_GRADIENT, 1, frame_circles_l.rows/8, 150, 25, 0, 0 );
+		HoughCircles( frame_circles_r, circles_r, CV_HOUGH_GRADIENT, 1, frame_circles_r.rows/8, 150, 30, 0, 0 );
+		HoughCircles( frame_circles_l, circles_l, CV_HOUGH_GRADIENT, 1, frame_circles_l.rows/8, 150, 30, 0, 0 );
 
 		/// Draw the circles detected
 		int cx, cy, center_x_r, center_y_r, center_x_l, center_y_l;
@@ -222,18 +219,20 @@ int main()
 
 		int d = center_x_r - center_x_l;
 
-	//	CvMat X = center_x_l * Q[0, 0] + Q[0, 3];
+		double X = center_x_l * qu[0][0] + qu[0][3];
 
 
-//		float Y = center_y_l * Q[1, 1] + Q[1, 3];
-//		float Z = Q[2, 3];
-//		float W = d * Q[3, 2] + Q[3, 3];
 
-//		X = X / W;
-//		Y = Y / W;
-//		Z = Z / W;
 
-		//printf("X: %d  Y: %d   Z: %d\n", X, Y, Z);
+		double Y = center_y_l * qu[1][1] + qu[1][3];
+		double Z = qu[2][3];
+		double W = d * qu[3][2] + qu[3][3];
+
+		X = X / W;
+		Y = Y / W;
+		Z = Z / W;
+
+		printf("X: %d  Y: %d   Z: %d\n", (int)X, (int)Y, (int)Z);
 
 
 		// Convert cv::Mat to IplImage
@@ -257,36 +256,38 @@ int main()
 		//cvReleaseImage(&frame_ipl);
 
 		//Save image to disk (preview from beaglebone)
-		//cvSaveImage("scary.jpg", frame_orig_ipl);
+		//cvSaveImage("scary_l.jpg", frame_orig_l);
+		//cvSaveImage("scary_r.jpg", frame_orig_r);
 
-		imshow("left", frame_orig_l);
-		imshow("right", frame_orig_r);
+
+		imwrite("scary_l.jpg", frame_orig_l);
+		imwrite("scary_r.jpr", frame_orig_r);
 
 
 		int c = cvWaitKey(10);
 
-		if ((char) c == 65){
-			char l[15],r[15];
-
-			sprintf(l, "left%02d.ppm", aux);
-			sprintf(r, "right%02d.ppm", aux);
-
-			//cvSaveImage(l, &frame_left);
-			imwrite(l, frame_left);
-			imwrite(r, frame_right);
-
-			//imsa
-			//cvSaveImage(r, frame_right);
-
-			aux++;
-		}
+//		if ((char) c == 65){
+//			char l[15],r[15];
+//
+//			sprintf(l, "left%02d.ppm", aux);
+//			sprintf(r, "right%02d.ppm", aux);
+//
+//			//cvSaveImage(l, &frame_left);
+//			imwrite(l, frame_left);
+//			imwrite(r, frame_right);
+//
+//			//imsa
+//			//cvSaveImage(r, frame_right);
+//
+//			aux++;
+//		}
 		//If 'ESC' is pressed, break the loop
 		if ((char) c == 27)
 			break;
 		//cvReleaseImage(&img_save);
 	}
 
-	cvDestroyAllWindows();
+	//cvDestroyAllWindows();
 	return 0;
 }
 
