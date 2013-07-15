@@ -111,14 +111,7 @@ void trackObject(Mat imgCanny, Mat frame) {
 
 int main()
 {
-	//load the video stream
-	CvCapture *capture_r = cvCaptureFromCAM(1);
-	CvCapture *capture_l = cvCaptureFromCAM(0);
-	//set video rezolution
-	cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_WIDTH, 320);
-	//cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_HEIGHT, 240);
-	cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 320);
-	//cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_HEIGHT, 240);
+
 
 	//Mat *Q = (Mat *)cvLoad("Q.xml");
 	double qu[4][4] ={{1.0, 0.0, 0.0, -1.0384888534545898e+03},
@@ -129,15 +122,6 @@ int main()
 
 	int aux=0;
 
-	if (!capture_r) {
-		printf("Capture right failed!\n");
-		return -1;
-	}
-
-	if (!capture_l) {
-		printf("Capture left failed!\n");
-		return -1;
-	}
 
 
 	Mat frame_circles_r, frame_circles_l, frame_polygons_r, frame_polygons_l, frame_orig_r,frame_orig_l, frame_left, frame_right;
@@ -153,9 +137,29 @@ int main()
 //	//iterate through each frame of the video
 	while (1)
 	{
-//		frame_orig = cvQueryFrame(capture);
-		frame_orig_l = cvQueryFrame(capture_l);
+
+		//load the video stream
+		CvCapture *capture_r = cvCaptureFromCAM(1);
+		//set video rezolution
+		cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_WIDTH, 320);
+		cvSetCaptureProperty(capture_r, CV_CAP_PROP_FRAME_HEIGHT, 240);
+
+		if (!capture_r) {
+			printf("Capture right failed!\n");
+			return -1;
+		}
 		frame_orig_r = cvQueryFrame(capture_r);
+		cvReleaseCapture(&capture_r);
+
+		CvCapture *capture_l = cvCaptureFromCAM(0);
+		cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_WIDTH, 320);
+		cvSetCaptureProperty(capture_l, CV_CAP_PROP_FRAME_HEIGHT, 240);
+		if (!capture_l) {
+			printf("Capture left failed!\n");
+			return -1;
+		}
+		frame_orig_l = cvQueryFrame(capture_l);
+		cvReleaseCapture(&capture_l);
 
 		frame_polygons_r = frame_orig_r.clone();
 		frame_polygons_l = frame_orig_l.clone();
